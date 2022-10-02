@@ -1,0 +1,9 @@
+Opening file titanic_project.csv.
+Total number of observations (rows): 1046
+
+Number of rows for training: 800
+Train time: 177067000 nanoseconds
+Coefficients: w0 =  0.999878; w1 =  -2.41087
+
+Number of rows for testing: 246
+Test metrics: Accuracy = 0.784553; sensitivity = 0.695652; specificity = 0.862595

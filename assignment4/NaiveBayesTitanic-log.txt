@@ -1,0 +1,19 @@
+Read 800 train rows and 246 test rows.
+
+Survived
+====================
+A-priori: 0.39
+pclass: Mean = 1.90385; variance = 0.727934
+sex: Mean = 0.320513; variance = 0.217784
+age: Mean = 28.8261; variance = 208.485
+
+Died
+====================
+A-priori: 0.61
+pclass: Mean = 2.43033; variance = 0.589408
+sex: Mean = 0.840164; variance = 0.134288
+age: Mean = 30.4182; variance = 204.732
+
+Train time: 1179700 nanoseconds
+
+Test metrics: Accuracy = 0.784553; sensitivity = 0.695652; specificity = 0.862595
