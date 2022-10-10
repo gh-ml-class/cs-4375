@@ -1,0 +1,51 @@
+---
+title: "Dimensionality Reduction"
+output: pdf_document
+---
+
+## Load and Clean the data
+
+Dataset: [Kansas City House Data](https://www.kaggle.com/datasets/astronautelvis/kc-house-data) via Kaggle.
+
+```{r}
+df <- read.csv("cubic_zirconia.csv")
+df$X <- NULL
+
+df$cut <- as.numeric(factor(df$cut, levels = c("Fair", "Good", "Very Good", "Premium", "Ideal")))
+df$color <- as.numeric(as.factor(df$color))
+df$clarity <- as.numeric(factor(df$clarity, levels = c("I1", "SI2", "SI1", "VS2", "VS1", "VVS2", "VVS1", "IF")))
+
+df <- df[!(df$x == 0),]
+df <- df[!(df$y == 0),]
+df <- df[!(df$z == 0),]
+
+set.seed(1234)
+i <- sample(1:nrow(df), 0.8*nrow(df), replace=FALSE)
+train <- df[i,]
+test <- df[-i,]
+```
+
+## Explore the Data
+Data is further explored statistically and graphically for PCA and LDA since these two algorithms differ in their mathematical approaches. 
+```{r}
+str(train)
+```
+
+## Principle Component Analysis - PCA
+```{r}
+library("factoextra")
+pca1 <- prcomp(train[,1:4], scale = TRUE)
+summary(pca1)
+
+#Visualize eigenvalues (scree plot)
+fviz_eig(pca1)
+```
+
+## Linear Discriminant Analysis (LDA)
+```{r}
+library(MASS)
+lda1 <- lda(price~., data = train)
+head(lda1$means)
+```
+## Accuracy Loss
+There is possible accuracy when applying either PCA or LDA because the algorithms will not take into the account actual target variable when choosing which features to reduce. These algorithms could deem features with high variance as important features, but such features may not even have anything to do with the prediction target.Additionally, PCA and LDA are both very sensitive to outliers, which can lead to misleading conclusions when outliers are present. Hence, it is important to perform proper and thorough data preprocessing.

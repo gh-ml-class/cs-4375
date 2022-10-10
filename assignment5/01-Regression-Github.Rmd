@@ -1,0 +1,207 @@
+---
+title: "Regression"
+output: pdf_document
+---
+## Regressiom Algorithms 
+One of the many applications that regression algorithms are used for is to predict the prices for a product. In this case, we will work with a cubic zirconia data set to predict the price of cubic zirconia gemstones based on attributes such as cut, color, and so on. Although R has a built-in 'diamonds' dataset included with the ggplot2 package, it would be interesting to see what attributes are important to distinguish the quality of cubic zirconia gemstones, which are generally views as a cheaper alternative to diamonds. For this exploration, we would like to implement and compare the performances of the following regression algorithms will be used to analyze the diamond data set: linear regression, kNN regression, and decision tree regression.
+
+## Load the Data
+
+Dataset: ['Gemstone Price Prediction' dataset](https://www.kaggle.com/datasets/colearninglounge/gemstone-price-prediction)
+
+```{r}
+df <- read.csv("cubic_zirconia.csv")
+head(df)
+```
+## Data Cleaning
+Before dividing the data into train/test sets, it is good to handle row instances that may be missing information or is a duplicate. Since we may not know what attributes would significantly affect the outcome price of a cubic zirconia gemstone, we will simply omit rows with NA's instead of filling them in with some mean value. Row duplicates will also be omitted. We will also remove the first column since its value is the row instance number, which we do not need.
+
+There are three qualitative attributes in this dataset: cut, color, clarity. Before examining the distributions of these three attributes, change these columns so that they are factors instead of characters.
+```{r}
+print(paste("Number of rows (before): ", nrow(df)))
+
+# Delete rows with NA's or are duplicates
+df <- na.omit(df)
+df <- unique(df)
+
+print(paste("Number of rows (after): ", nrow(df)))
+
+# Remove first column
+df$X <- NULL
+
+# Convert chr columns to be factors
+df$cut <- factor(df$cut, levels = c("Fair", "Good", "Very Good", "Premium", "Ideal"))
+df$color <- as.factor(df$color)
+df$clarity <- factor(df$clarity, levels = c("I1", "SI2", "SI1", "VS2", "VS1", "VVS2", "VVS1", "IF"))
+str(df)
+```
+## Divide Train/Test
+```{r}
+set.seed(1234)
+i <- sample(1:nrow(df), nrow(df)*0.80,replace=FALSE)
+train <- df[i,]
+test <- df[-i,]
+```
+
+## Data Exploration
+First, we will examine the distribution of the attributes individually with graph visualization. Then, we will analyze trends between the predictor attributes and the target attribute, price.
+```{r}
+#table(train$cut)
+barplot(table(train$cut), 
+        main="Distribution of Cut Quality", xlab="Cut Quality", ylab="Count")
+
+#table(train$color)
+barplot(table(train$color), 
+        main="Distribution of Color", xlab="Color", ylab="Count")
+
+#table(train$clarity)
+barplot(table(train$clarity), 
+        main="Distribution of Clarity", xlab="Clarity", ylab="Count")
+```
+```{r}
+library(ggplot2)
+
+# Total Depth Percentage
+ggplot(train, aes(x=depth)) + 
+  geom_histogram(binwidth = 0.1) + 
+  geom_vline(aes(xintercept=mean(depth)), color = "blue", linetype = "dashed") +
+  labs(title = "Depth Percentage Histogram Plot", x = "Depth Percentage", y = "Count")
+
+# Table Percentage
+ggplot(train, aes(x=table)) + 
+  geom_histogram(binwidth = 1, color = "black", fill = "white") + 
+  geom_vline(aes(xintercept=mean(table)), color = "blue", linetype = "dashed") +
+  labs(title = "Table Percentage Histogram Plot", x = "Table Percentage", y = "Count")
+```
+
+
+```{r}
+par(mfrow = c(1,3))
+
+# Length, x
+boxplot(train$x, 
+        main = "X", 
+        ylab = "Length (in mm)", 
+        col = "red")
+
+# Width, y
+boxplot(train$y, 
+        main = "Y", 
+        ylab = "Width (in mm)",
+        col = "orange")
+
+# Depth, z
+boxplot(train$z, 
+        main = "Z", 
+        ylab = "Depth (in mm)",
+        col = "yellow")
+
+par(mfrow = c(1,1))
+```
+After analyzing the attributes individually, we can see that there are some outliers for dimensions x, y, and z that we may have to clean up. Let's plot these attributes in relation to price to have a better visualization for how many outliers there are.
+```{r}
+par(mfrow = c(1,3))
+plot(train$x, train$price, 
+      main = "", xlab = "Length (in mm)", ylab = "Price (in USD)")
+
+plot(train$y, train$price, 
+     main = "", xlab = "Width (in mm)", ylab = "Price (in USD)")
+
+plot(train$z, train$price, 
+     main = "", xlab = "Depth (in mm)", ylab = "Price (in USD)")
+
+mtext("Cubic Zirconia Dimensions in Relation to Price", side = 3, line = -2, outer = TRUE)
+par(mfrow = c(1,1))
+```
+There are a few zeros for the gemstone dimensions, but since there are very few of these cases, it would be alright to remove these instances from the dataset.
+```{r}
+print(paste("Number of train rows (before): ", nrow(train)))
+
+# Delete rows with dimension length of 0
+train <- train[!(train$x == 0),]
+train <- train[!(train$y == 0),]
+train <- train[!(train$z == 0),]
+
+print(paste("Number of train rows (after): ", nrow(train)))
+```
+There are some outliers for the dimensions x, y, and z that can be seen from our analysis of these attributes so far. However, gemstones probably come in all sorts of different sizes and shapes, so it should be alright to leave the outliers alone. 
+
+Besides the physical size and shape of the cubic zirconia gemstone, its carat value or weight seems like it could be a good predictor for predicting price. Let's also examine how the categories of cut, color, and clarity also fit into the trend between carat and price.
+```{r}
+ggplot(train) + geom_point(aes(x=carat,y=price,colour=cut)) +
+  labs(title = "Price in Relation to Gemstone's Carat and Cut Quality", x = "Carat", y = "Price (in USD") +
+    scale_color_brewer(palette = "Accent")
+
+ggplot(train) + geom_point(aes(x=carat,y=price,colour=color)) +
+  labs(title = "Price in Relation to Gemstone's Carat and Color", x = "Carat", y = "Price (in USD") +
+    scale_color_brewer(palette = "Set1")
+
+ggplot(train) + geom_point(aes(x=carat,y=price,colour=clarity)) +
+  labs(title = "Price in Relation to Gemstone's Carat and Clarity", x = "Carat", y = "Price (in USD)") +
+  scale_color_brewer(palette = "Paired")
+```
+## Linear Regression
+Build a linear regression model with all predictors to see which predictors are good or bad to use.
+```{r}
+lm1 <- lm(price~., data=train)
+summary(lm1)
+```
+It seems that predictors relating to the physical dimensions of the gemstones are not good predictors so we will build another linear regression model that does not include those predictors. Hence, we will only use carat, cut, color, and clarity for our predictors for price.And we will go ahead and evalute this second linear regression model with the test data.
+```{r}
+#build the linear regression model
+lm2 <- lm(price~carat+cut+color+clarity, data=train)
+summary(lm2)
+
+#evaluate
+pred_lm <- predict(lm2, newdata=test)
+cor_lm <- cor(pred_lm, test$price)
+rmse_lm <- sqrt(mean((pred_lm-test$price)^2))
+print(paste("cor=", cor_lm))
+print(paste("rmse=", rmse_lm))
+```
+Since we have decided to not use table, depth, x, y, and z as predictors for the linear regression model, we will also not include them for training and evaluating on the kNN regression and decision tree regression models. Hence, we will proceed with using only carat, cut, color, and clarity as our predictors.
+
+## kNN Regression
+```{r}
+library(caret)
+
+#Convert chr to int
+train$cut <- as.integer(train$cut)
+train$color <- as.integer(train$color)
+train$clarity <- as.integer(train$clarity)
+
+test$cut <- as.integer(test$cut)
+test$color <- as.integer(test$color)
+test$clarity <- as.integer(test$clarity)
+
+#fit the kNN regression model
+fit <- knnreg(train[,1:4], train[,10],k = 3)
+
+# evaluate
+pred_knn <- predict(fit, test[,1:4])
+cor_knn <- cor(pred_knn, test$price)
+rmse_knn <- sqrt(mean((pred_knn-test$price)^2))
+print(paste("cor= ", cor_knn))
+print(paste("rmse= ", rmse_knn))
+```
+## Decision Tree Regression
+```{r}
+library(tree)
+
+#build the DT model
+tree1 <- tree(price~carat+cut+color+clarity, data=train)
+summary(tree1)
+
+#evaluate
+pred_tree <- predict(tree1, newdata=test)
+cor_tree <- cor(pred_tree, test$price)
+rmse_tree <- sqrt(mean((pred_tree-test$price)^2))
+print(paste('correlation:', cor_tree))
+print(paste('rmse:', rmse_tree))
+plot(tree1)
+text(tree1, cex=0.5, pretty=0)
+```
+## Comparison and Analysis
+The best performing algorithm for regression was kNN with a correlation of 0.98 and rmse of 784.67. The next best algorithm was linear regression with a correlation of 0.95 and a rmse of 1210. The decision tree algorithm ranks last with a correlation of 0.94 and a rsme of 1238. 
+
+The decision tree may have performed the worst because small changes in data can cause a large change in the overall tree structure and therefore cause instability. Additionally, the calculations can become overly complex, especially when working with multiple variable predictors like we do here with using carat, cut, color, and clarity. The main pro for decision trees though is that they are generally robust to outliers. On the other hand, the kNN algorithm has the advantage of being simple and easier to interpret. When applied for regression, kNN finds the k nearest data points and the target value is computed as the mean of the target value of these k nearest neighbors. Linear regression will work pretty well so long as the data that we are working with presents some form of linear trend, which in this case is true for the overall quality of a product highly correlates with its price. 

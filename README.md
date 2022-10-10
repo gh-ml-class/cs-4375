@@ -17,3 +17,7 @@ R notebooks for [classification](assignment3/Classification.pdf) and [regression
 ## ML From Scratch (C++)
 
 [Logistic Regression Code](assignment4/LogisticRegressionTitanic.cpp); [Logistic Regression Log](assignment4/LogisticRegressionTitanic-log.txt); [Naive Bayes Code](assignment4/NaiveBayesTitanic.cpp); [Naive Bayes Log](assignment4/NaiveBayesTitanic-log.txt); [Report PDF](assignment4/ML_Algorithms_from_Scratch.pdf)
+
+## Searching for Similarity (R)
+
+There are many PDF and data files for this assignment; please see [the folder](assignment5/) containing all of them.

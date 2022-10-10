@@ -1,0 +1,84 @@
+---
+title: "Classification"
+output: pdf_document
+---
+
+## Load the data; split train/test
+
+Dataset: [Hotel Bookings/Cancellations](https://www.kaggle.com/datasets/mojtaba142/hotel-booking) via Kaggle.
+
+Data is loaded and cleaned here. I put these steps together since it was easier for me to work with all consolidated in one place, but most of the time I spent with data exploration involved making observations about the dataframe as I was handling factors, subset, etc.
+
+```{r}
+df <- read.csv("hotel_booking.csv", header=TRUE)
+set.seed(1234)
+df <- df[sample(1:nrow(df), 10000, replace=FALSE),]
+df$hotel <- factor(df$hotel)
+df$arrival_date_month <- factor(df$arrival_date_month)
+df$meal <- factor(df$meal)
+df$market_segment <- factor(df$market_segment)
+df$distribution_channel <- factor(df$distribution_channel)
+df$reserved_room_type <- factor(df$reserved_room_type)
+df$assigned_room_type <- factor(df$assigned_room_type)
+df$deposit_type <- factor(df$deposit_type)
+df$customer_type <- factor(df$customer_type)
+df$reservation_status <- factor(df$reservation_status)
+df$reservation_status_date <- as.Date(df$reservation_status_date)
+df <- subset(df, select=-c(agent, company, country, credit_card, email, name, phone.number, reservation_status))
+
+i <- sample(1:nrow(df), 0.8*nrow(df), replace=FALSE)
+train <- df[i,]
+test <- df[-i,]
+```
+
+## Explore data
+
+Unfortunately the hotel cancellation data is difficult to explore graphically, as none of the attributes of various cancellations make intuitive sense in a visual space. Nevertheless, we can get a good idea of the types of data we're dealing with by simply looking at some of the entries in the dataframe.
+
+```{r}
+str(df)
+```
+
+## Logistic regression
+
+```{r}
+glm1 <- glm(is_canceled~., data=train, family="binomial")
+glm1_probs <- predict(glm1, newdata=test, type="response")
+glm1_pred <- ifelse(glm1_probs > 0.5, 1, 0)
+glm1_acc <- mean(glm1_pred == test$is_canceled)
+print(paste("accuracy = ", glm1_acc))
+table(glm1_pred, test$is_canceled)
+```
+
+## kNN
+
+```{r}
+library(class)
+library(fastDummies)
+knn1_train <- dummy_cols(train, remove_selected_columns=TRUE)
+knn1_train$reservation_status_date <- as.numeric(knn1_train$reservation_status_date)
+knn1_train_scaled <- scale(knn1_train)
+knn1_test <- dummy_cols(test, remove_selected_columns=TRUE)
+knn1_test$reservation_status_date <- as.numeric(knn1_test$reservation_status_date)
+knn1_test_scaled <- scale(knn1_test)
+knn1_pred <- knn(knn1_train_scaled, knn1_test_scaled, cl=knn1_train$is_canceled, k=3)
+knn1_results <- knn1_pred == knn1_test$is_canceled
+knn1_acc <- length(which(knn1_results == TRUE)) / length(knn1_results)
+print(paste("accuracy = ", knn1_acc))
+table(knn1_results, knn1_pred)
+```
+
+## Decision trees
+
+```{r}
+library(rpart)
+tree1 <- rpart(is_canceled~., data=train, method="class")
+tree1_pred <- predict(tree1, newdata=test, type="class")
+tree1_acc <- mean(tree1_pred == test$is_canceled)
+print(paste("accuracy = ", tree1_acc))
+table(tree1_pred, test$is_canceled)
+```
+
+## Comparison and analysis
+
+The best algorithm was kNN, followed by logistic regression. The decision tree algorithm performed worst. My hypothesis is that the decision tree becomes overly complex from being trained with so many attributes and "learns" patterns that aren't really relevant to the data. kNN seems to be a great, general-purpose algorithm, and makes sense for predicting hotel cancellations as the situation surrounding one cancellation would likely be similar to that of other cancellations, so it is reasonable to simply cluster cancellations together and predict the value of each test point based on similarity to the training data. Logistic regression works surprisingly well, probably for a similar reason to kNN, but because the separation between the various canceled/non-canceled bookings lends itself to being "cut" by a logistic equation.

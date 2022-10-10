@@ -1,0 +1,50 @@
+---
+title: "Clustering"
+output: pdf_document
+---
+
+## Load the data
+
+Dataset: [Kansas City House Data](https://www.kaggle.com/datasets/astronautelvis/kc-house-data) via Kaggle.
+
+```{r}
+df <- read.csv("kc_final.csv", header=TRUE)
+set.seed(1234)
+df <- df[sample(1:nrow(df), 10000, replace=FALSE),]
+df <- subset(df, select=-c(X, id, date))
+```
+
+## Explore statistically and graphically
+
+A good graphical illustration of the data may be seen below in the k-Means example (input data is basically the same as what is shown geometrically in that graph, and the colors are generated as a result of the clustering). We can print out part of the dataframe to learn about the format of data it contains.
+
+```{r}
+str(df)
+```
+
+## k-Means
+
+```{r}
+kmeans1 <- kmeans(df[c("price", "sqft_living")], 3, nstart=20)
+plot(df$price, df$sqft_living, pch=21, bg=c("red", "green3", "blue")[unclass(kmeans1$cluster)], main="k-Means Clustering")
+```
+
+## Hierarchical
+
+```{r}
+dist1 <- dist(df[c("bedrooms", "floors", "view")])
+hclust1 <- hclust(dist1, method="average")
+plot(hclust1, hang=-1, cex=0.8, main="Hierarchical Clustering")
+```
+
+## Model-based
+
+```{r}
+library(mclust)
+mclust1 <- Mclust(df[c("bedrooms", "floors", "view")])
+summary(mclust1)
+```
+
+## Comparison and analysis
+
+The k-Means clustering yields the most intuitive results, as it simply groups together points on a graph similarly to how humans would identify clumps of points near each other. It clearly identifies three classes, low-, medium-, and high-end houses. The hierarchical clustering algorithm is quite impractical on this dataset; it generates a hugely complex clustering system which is difficult to reason about even enough to determine how to improve it. The complexity grows as more input attributes are considered. Model-based clustering is a little strange and difficult to interpret/visualize, but its convenience lies in the fact that it attempts to automatically select the optimum clustering model based on various statistical metrics.
