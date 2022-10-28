@@ -20,4 +20,8 @@ R notebooks for [classification](assignment3/Classification.pdf) and [regression
 
 ## Searching for Similarity (R)
 
-There are many PDF and data files for this assignment; please see [the folder](assignment5/) containing all of them.
+There are many PDF and data files for this assignment; please see [the folder](https://github.com/gh-ml-class/cs-4375/tree/main/assignment5) containing all of them.
+
+## Kernel and Ensemble Methods (R)
+
+There are many PDf files for this assignment; please see [the folder](https://github.com/gh-ml-class/cs-4375/tree/main/assignment6) containing all of them.
