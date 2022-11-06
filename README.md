@@ -24,4 +24,8 @@ There are many PDF and data files for this assignment; please see [the folder](h
 
 ## Kernel and Ensemble Methods (R)
 
-There are many PDf files for this assignment; please see [the folder](https://github.com/gh-ml-class/cs-4375/tree/main/assignment6) containing all of them.
+There are many PDF files for this assignment; please see [the folder](https://github.com/gh-ml-class/cs-4375/tree/main/assignment6) containing all of them.
+
+## Machine Learning with SKLearn (Python)
+
+View the [exported PDF notebook](assignment7/MLwithSKLearn.pdf)
